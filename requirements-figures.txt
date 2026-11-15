@@ -1,0 +1,3 @@
+-r requirements.txt
+# Used only for figures; training and checkpoint verification require only NumPy.
+matplotlib==3.11.2

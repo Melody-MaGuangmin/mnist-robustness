@@ -1,0 +1,2 @@
+# Recorded runtime: Python 3.12.14. No sklearn/scipy/torch dependency.
+numpy==2.3.5

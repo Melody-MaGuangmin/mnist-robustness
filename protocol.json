@@ -1,0 +1,21 @@
+{
+  "study": "MNIST robustness with translation and Gaussian noise augmentation",
+  "declared_before_training": true,
+  "dataset": {"name": "MNIST", "source_url": "https://storage.googleapis.com/tensorflow/tf-keras-datasets/mnist.npz", "original_training_size": 60000, "official_test_size": 10000, "height": 28, "width": 28, "scale_divisor": 255.0},
+  "split": {"seed": 2026, "validation_per_class": 500, "algorithm": "For labels 0..9 in order, permute original training indices using one numpy.default_rng(2026); take first 500 for validation. Sort final train and validation indices separately. Official test set remains unchanged."},
+  "model": {"layers": [784, 128, 10], "activation": "ReLU", "initialization": "W1 He normal, W2 normal sqrt(1/128), zero biases"},
+  "methods": ["baseline", "shift", "noise", "joint"],
+  "seeds": [11, 22, 33, 44, 55],
+  "epochs": 10,
+  "batch_size": 128,
+  "evaluation_batch_size": 1024,
+  "blas_threads": 2,
+  "optimizer": {"name": "Adam", "learning_rate": 0.001, "beta1": 0.9, "beta2": 0.999, "epsilon": 1e-8, "l2_coefficient": 0.0001, "l2_applies_to": "W1 and W2 only, added to gradient before Adam; not AdamW"},
+  "augmentation": {"shift_probability": 0.5, "shift_pixels": 2, "direction_dy_dx": [[-1,0],[1,0],[0,-1],[0,1]], "padding": "zero, no wrapping", "noise_probability": 0.5, "noise_std": 0.15, "noise_clip": [0,1], "joint_order": "shift then noise; independent Bernoulli decisions"},
+  "random_streams": {"initialization": "default_rng(seed)", "shuffle": "default_rng(seed+1000)", "training_shift": "default_rng(seed+2000)", "training_noise": "default_rng(seed+3000)", "fairness": "all methods draw both augmentation streams every batch, even if unused; same initialization and permutations for each seed"},
+  "validation": {"conditions": ["clean", "shift2", "noise_0.15", "joint_0.15"], "noise_seed": 9182, "joint_noise_seed": 9183, "noise_repetitions_per_image_per_direction": 1, "criterion": "unweighted average accuracy of the four conditions; earliest epoch wins ties"},
+  "test": {"conditions": ["clean", "noise_0.10", "noise_0.20", "noise_0.30", "shift2", "joint_0.20", "shift4"], "noise_seed": 271828, "joint_noise_seed": 271829, "noise_repetitions_per_image_per_direction": 1, "shift2": "all four axial directions, 2 pixels", "joint_0.20": "all four 2-pixel shifts, each followed by independent Gaussian noise", "shift4": "all four axial directions, 4 pixels; amplitude extrapolation stress test"},
+  "corruption_generation": "float32 inputs; rng.normal(size=batch.shape).astype(float32); use one stream per condition and reset to the documented phase seed; same noise stream reused across pure-noise severities; direction-major then original-image-major ordering; clip to [0,1]. SHA256 hashes cover concatenated C-order little-endian float32 image bytes and int64 labels, recorded separately.",
+  "test_policy": "Finish all 20 training runs before loading official test arrays and evaluating validation-selected checkpoints. No test-guided tuning.",
+  "statistics": "Mean and sample standard deviation over five optimization seeds on one fixed official split. Corrupted views of the same image are not independent test subjects. No statistical-significance claim."
+}
